@@ -1,0 +1,23 @@
+image: node:16.18.0
+
+pipelines:
+  branches:
+    dev:
+      - step:
+          name: Deploy to dev
+          deployment: Production
+          caches:
+            - node
+          script: # Modify the commands below to build your repository.
+            - npm i
+            - apt-get update && apt-get install -y rsync
+            - ssh-keyscan -H $54.36.174.186 >> ~/.ssh/known_hosts
+            - cd $BITBUCKET_CLONE_DIR
+            - rsync -r -v -e ssh . root@54.36.174.186:/var/www/dc --delete-before --exclude '.git'
+            - ssh root@54.36.174.186 'cd /var/www/dc'
+            - docker compose up -d nodejs
+
+          #            - ssh root@54.36.174.186 'cd /var/www/dc && npm run build'
+          #            - ssh root@54.36.174.186 'sudo service nginx restart'
+          services:
+            - docker

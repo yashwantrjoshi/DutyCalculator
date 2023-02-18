@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  nodejs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nodejs
+    container_name: nodejs
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "5555:5555"
+
+  proxy:
+      build:
+        context: .
+        dockerfile: Dockerfile.nginx
+      image: nginx_proxy:v1
+      ports:
+        - 5555:5555
+      depends_on:
+        - nodejs
+      deploy:
+        placement:
+          constraints: [node.role == manager]
