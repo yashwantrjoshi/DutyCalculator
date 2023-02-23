@@ -116,13 +116,13 @@ const middleware = (router, middleware) => {
         let colList = ['hs', 'des', 'cyn', 'ui', 'total'], refCols = [];
         colList = colList.map(col => `${reqBody.import_country}.${reqBody.import_country}_${col} as ${col}`);
         dataJSON.filter(o => !o.ref).forEach(col => {
-            colList.push(...getAllDutyColumns(col.duty_code, reqBody.import_country, reqBody.import_country));
+            colList.push(...getAllDutyColumns(col.duty_code,col.duty_details_description,reqBody.import_country, reqBody.import_country));
         });
         // console.log(colList);
         // console.log(dataJSON);
         dataJSON.filter(o => o.ref).forEach(col => {
             if (!refCols.includes(col.ref)) refCols.push(col.ref);
-            colList.push(...getAllDutyColumns(col.duty_code, `${reqBody.import_country}_${col.ref}`, reqBody.import_country));
+            colList.push(...getAllDutyColumns(col.duty_code,col.duty_details_description, `${reqBody.import_country}_${col.ref}`, reqBody.import_country));
         });
         // language=SQL format=false
         if (refCols.length === 0) {
@@ -136,8 +136,8 @@ const middleware = (router, middleware) => {
                  ON ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.import_country}_${refCols[0]}.${reqBody.import_country}_hs
                  where ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.hscode};`);
     },
-    getAllDutyColumns = (duty, tblName, import_country) => {
-        return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
+    getAllDutyColumns = (duty ,duty_details_description,tblName, import_country) => {
+        return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`,`'${duty_details_description}' as ${duty}_dd` ,`${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
     },
     getCalculatedDuty = (duty, data) => {
         if (!duty) return duty;

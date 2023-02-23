@@ -18,7 +18,7 @@ exports.getHsCodeDetails = async (req, res) => {
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
 	const _hs = parseInt(hs);
-	const _q = `SELECT * FROM hs_codes_details WHERE hs2 = '${hs}' OR hs4 = '${hs}' OR hs6 = '${hs}' OR hs2 = '${_hs}' OR hs4 = '${_hs}' OR hs6 = '${_hs}' limit 100;`;
+	const _q = `SELECT * FROM hs_codes_details WHERE hs2 = '${hs}' OR hs4 = '${hs}' OR hs6 = '${hs}' OR hs2 = '${_hs}' OR hs4 = '${_hs}' OR hs6 = '${_hs}' OR hs2_des LIKE '%${hs}%' OR hs4_des LIKE '%${hs}%'OR hs6_des LIKE '%${hs}%' limit 100;`;
 	console.log(_q);
 	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
 	console.log(hs_codes.length);
