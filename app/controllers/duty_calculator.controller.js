@@ -75,9 +75,19 @@ exports.getDuty = async (req, res) => {
                     }
                 }
             });
-            var responseData = {}, dutyDetails = {}, parseData = duty[0];
-            const dutyKeys = Object.keys(parseData);
-            dutyKeys.forEach((key) => { key.match(/(_cl|_d|_dd)$/) ? dutyDetails[key] = parseData[key] : responseData[key] = parseData[key]; } );
+            var responseData = {}, dutyDetails = [], groupedData = {}, parseData = duty[0];
+            const groupedDutyKeys = Object.keys(parseData);
+            groupedDutyKeys.forEach((key) => { key.match(/(_cl|_d|_dd)$/) ? groupedData[key] = parseData[key] : responseData[key] = parseData[key]; } );
+            const dutyKeys = groupedDutyKeys.filter(element => element.match(/(_dd)$/));
+            dutyKeys.forEach((dutyKey) => {
+                var name = dutyKey.split("_dd")[0];
+                var _cl = `${name}_cl`, _d=`${name}_d`;
+                dutyDetails.push({
+                    [dutyKey] : groupedData[dutyKey],
+                    [_cl] : groupedData[`${name}_cl`],
+                    [_d] : groupedData[`${name}_d`]
+                })
+            });
             responseData['import_country'] = req.body.import_country;
             responseData['export_country'] = req.body.export_country;
             responseData = { ...responseData, dutyDetails};
