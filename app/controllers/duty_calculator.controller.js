@@ -75,7 +75,13 @@ exports.getDuty = async (req, res) => {
                     }
                 }
             });
-            returnData(res, duty);
+            var responseData = {}, dutyDetails = {}, parseData = duty[0];
+            const dutyKeys = Object.keys(parseData);
+            dutyKeys.forEach((key) => { key.match(/(_cl|_d|_dd)$/) ? dutyDetails[key] = parseData[key] : responseData[key] = parseData[key]; } );
+            responseData['import_country'] = req.body.import_country;
+            responseData['export_country'] = req.body.export_country;
+            responseData = { ...responseData, dutyDetails};
+            returnData(res, responseData);
         } catch (e) {
             console.log(e);
             returnError(res, 'There was some error, please try again  ' + e);

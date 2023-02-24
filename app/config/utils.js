@@ -137,7 +137,7 @@ const middleware = (router, middleware) => {
                  where ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.hscode};`);
     },
     getAllDutyColumns = (duty ,duty_details_description,tblName, import_country) => {
-        return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`,`'${duty_details_description}' as ${duty}_dd` ,`${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
+        return [`${tblName}.${import_country}_${duty}_d ${duty}_d`,`'${duty_details_description}' as ${duty}_dd` ,`${tblName}.${import_country}_${duty}_f ${duty}_f`, `${tblName}.${import_country}_${duty}_cl ${duty}_cl`];
     },
     getCalculatedDuty = (duty, data) => {
         if (!duty) return duty;
