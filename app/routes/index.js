@@ -1,6 +1,7 @@
 const users = require('./user.routes'),
 	dutyCalculator = require('./duty_calculator.routes'),
-	hsCodes = require('./hscodes.routes');
+	hsCodes = require('./hscodes.routes'),
+	country = require('./country.routes');
 
 module.exports = [
 	{
@@ -11,5 +12,6 @@ module.exports = [
 	},
 	...users,
 	...dutyCalculator,
-	...hsCodes
+	...hsCodes,
+	...country
 ];

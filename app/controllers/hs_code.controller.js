@@ -55,7 +55,7 @@ exports.getCountry = async (req, res) => {
 }
 
 exports.getCurrency = async (req, res) => {
-	const _q = `SELECT CONCAT(country_id,'-', cyn_code) AS value, CONCAT(country_name,', ', cyn_name) AS label FROM master_cyn;`;
+	const _q = `SELECT country_id AS code, cyn_code AS value, cyn_name AS label FROM master_cyn;`;
 	let currency = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, currency);
 }
