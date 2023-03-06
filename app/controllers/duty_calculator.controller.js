@@ -12,7 +12,6 @@ exports.getUserInput = async (req, res) => {
     let userInput = await db.sequelize.query(`SELECT duty_code
                                               FROM master_duty_details
                                               WHERE exp_country_code = '${req.body.export_country}';`, SELECT_OPTIONS);
-   // console.log('userInput', userInput);
     if (userInput && userInput.length) {
         let ui = await db.sequelize.query(`SELECT ${req.body.export_country}_cyn,${req.body.export_country}_hs6, ${req.body.export_country}_ui
                                            FROM ${req.body.export_country}
@@ -107,7 +106,6 @@ exports.getFTA = async (req, res) => {
                                               WHERE imp_country_code = '${req.body.import_country}'
                                                 AND (exp_country_code LIKE '%${req.body.export_country}%'
                                                   OR exp_country_code = 'all')`, SELECT_OPTIONS);
-    // console.log('userInput', userInput);
     let mfnCol = userInput.filter(k => k.duty_code.includes('mfn'));
     let mfnInput = null;
     if (mfnCol.length > 0) {
@@ -117,16 +115,13 @@ exports.getFTA = async (req, res) => {
                                                AND (imp_country_code LIKE '%${req.body.import_country}%' OR imp_country_code = 'all')`, SELECT_OPTIONS);
         // userInput = userInput.filter(k => !k.duty_code.includes('mfn'));
         // userInput.push(...mfnInput);
-        // console.log(userInput);
-        // console.log(mfnInput);
+        
     }
     let returnDataa = [];
     if (userInput && userInput.length) {
         for(input of mfnInput) {
-            // console.log(userInput, input)
             let userInputTemp = userInput;
             userInputTemp.push(input);
-            // console.log(userInputTemp)
             returnDataa.push(await getDutyfromUserInput(req, res, userInputTemp,input));
         };
     }

@@ -1,14 +1,14 @@
 const db = require("../models");
-const {SELECT_OPTIONS} = require("./CONSTANT");
-const {returnError, returnData} = require("./db.common");
+const { SELECT_OPTIONS } = require("./CONSTANT");
+const { returnError, returnData } = require("./db.common");
 const middleware = (router, middleware) => {
-        for (const f of middleware) {
-            f(router);
-        }
-    },
+    for (const f of middleware) {
+        f(router);
+    }
+},
     applyRoutes = (router, routes) => {
         for (const route of routes) {
-            const {method, path, handler} = route;
+            const { method, path, handler } = route;
             try {
                 (router)[method.toLowerCase()](path, handler);
             } catch (err) {
@@ -104,25 +104,23 @@ const middleware = (router, middleware) => {
         HTTP_VERSION_NOT_SUPPORTED: 505
     },
     R20X = (res, data, status = 200, message = null, error = null) => {
-        res.status(status).json({message: message, result: data, error: error});
+        res.status(status).json({ message: message, result: data, error: error });
         return true;
     },
     R40X = (res, error = null, status = 400) => {
         const _error = error && typeof error === 'string' ? error : error && error.message ? error.message : error;
-        res.status(status).json({error: _error});
+        res.status(status).json({ error: _error });
         return false;
     },
     getDutySelectQueryFromJSON = (dataJSON, reqBody, isFTA = false) => {
         let colList = ['hs', 'des', 'cyn', 'ui', 'total'], refCols = [];
         colList = colList.map(col => `${reqBody.import_country}.${reqBody.import_country}_${col} as ${col}`);
         dataJSON.filter(o => !o.ref).forEach(col => {
-            colList.push(...getAllDutyColumns(col.duty_code,col.duty_details_description,reqBody.import_country, reqBody.import_country));
+            colList.push(...getAllDutyColumns(col.duty_code, col.duty_details_description, reqBody.import_country, reqBody.import_country));
         });
-        // console.log(colList);
-        // console.log(dataJSON);
         dataJSON.filter(o => o.ref).forEach(col => {
             if (!refCols.includes(col.ref)) refCols.push(col.ref);
-            colList.push(...getAllDutyColumns(col.duty_code,col.duty_details_description, `${reqBody.import_country}_${col.ref}`, reqBody.import_country));
+            colList.push(...getAllDutyColumns(col.duty_code, col.duty_details_description, `${reqBody.import_country}_${col.ref}`, reqBody.import_country));
         });
         // language=SQL format=false
         if (refCols.length === 0) {
@@ -136,54 +134,45 @@ const middleware = (router, middleware) => {
                  ON ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.import_country}_${refCols[0]}.${reqBody.import_country}_hs
                  where ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.hscode};`);
     },
-    getAllDutyColumns = (duty ,duty_details_description,tblName, import_country) => {
-        return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`,`'${duty_details_description}' as ${import_country}_${duty}_dd` ,`${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
+    getAllDutyColumns = (duty, duty_details_description, tblName, import_country) => {
+        return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `'${duty_details_description}' as ${import_country}_${duty}_dd`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
     },
     getCalculatedDuty = (duty, data) => {
         if (!duty) return duty;
         try {
-            // console.log('duty---', duty);
-            // console.log('data---', data['base_value']);
             duty = duty.replaceAll(/[a-zA-Z_]+/g, m => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
-                // console.log('m',m);
                 return data.hasOwnProperty(m) ? data[m] : m;
             });
-            // console.log('duty2', duty);
             // return eval(eval(("`" + duty + "`")));
             return duty.includes('return') ? eval(duty)() : eval(duty);
         } catch (e) {
             console.error(e);
             return e;
-            // return 'error';
         }
     },
-    getDutyfromUserInput = async (req, res, userInput,basevalueref) => {
+    getDutyfromUserInput = async (req, res, userInput, basevalueref) => {
         try {
             const selectQ = getDutySelectQueryFromJSON(userInput, req.body);
-            // console.log('selectQ', selectQ);
             let duty = await db.sequelize.query(selectQ, SELECT_OPTIONS).catch(e => {
-                    returnError(res, 'Error: ' + e);
-                }
+                returnError(res, 'Error: ' + e);
+            }
             );
-            // console.log('duty', duty);
+            let dutyResponse = [];
             duty && duty.forEach(d => {
                 let mfn_col = Object.keys(d).filter(o => o.includes(basevalueref.duty_code) && o.endsWith('cl'));
                 mfn_col = mfn_col.length ? mfn_col[0] : null;
                 let temp = d;
-                if (d[mfn_col].startsWith('ref_'))
-                {
+                if (d[mfn_col].startsWith('ref_')) {
                     let refKeyname = d[mfn_col].replace('ref_', '');
-                    mfn_col=Object.keys(d).filter(o => o.includes(refKeyname));
+                    mfn_col = Object.keys(d).filter(o => o.includes(refKeyname));
                 }
                 Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
                 let base_value = !mfn_col ? 0 : isNaN(d[`${mfn_col}`]) ? 0 : d[`${mfn_col}`];
-                base_value= getCalculatedDuty(d[mfn_col], temp); 
+                base_value = getCalculatedDuty(d[mfn_col], temp);
                 temp['base_value'] = d['base_value'] = base_value;
-                // console.log('base_value_mfn', temp['base_value'])
-              //  d[mfn_col] = getCalculatedDuty(d[mfn_col], temp);
+                //  d[mfn_col] = getCalculatedDuty(d[mfn_col], temp);
                 Object.keys(d).forEach(key => {
-                    // console.log('key', key);
                     if (key.endsWith('_cl')) {
                         if (d[key].startsWith('ref_')) {
                             let refKey = d[key].replace('ref_', '');
@@ -191,7 +180,6 @@ const middleware = (router, middleware) => {
                         } else {
                             d[`${key}_formulae`] = d[key];
                             d['base_value'] = base_value;
-                            // console.log('base_value', d['base_value'])
                             Object.keys(req.body).forEach(bodyKey => d[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
                             d[key] = getCalculatedDuty(d[key], d);
                         }
@@ -204,7 +192,6 @@ const middleware = (router, middleware) => {
                         d['total_formulae2'] = d['total'];
                         // let temp = d;
                         // Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
-                       // console.log('base_value', temp['base_value'])
                         d['total_formulae3'] = (eval(("`" + d['total'] + "`")));
                         d['total'] = eval(eval("`" + d['total'] + "`"));
                     } catch (e) {
@@ -212,16 +199,37 @@ const middleware = (router, middleware) => {
                         console.log(e);
                     }
                 }
+
+
+                var responseData = {}, dutyDetails = [], groupedData = {}, parseData = d;
+                const groupedDutyKeys = Object.keys(parseData);
+                groupedDutyKeys.forEach((key) => { key.match(/(_cl|_d|_dd)$/) ? groupedData[key] = parseData[key] : responseData[key] = parseData[key]; });
+                const dutyKeys = groupedDutyKeys.filter(element => element.match(/(_dd)$/));
+                dutyKeys.forEach((dutyKey) => {
+                    var name = dutyKey.split("_dd")[0];
+                    var _cl = `${name}_cl`, _d = `${name}_d`;
+                    dutyDetails.push({
+                        [dutyKey]: groupedData[dutyKey],
+                        [_cl]: groupedData[`${name}_cl`],
+                        [_d]: groupedData[`${name}_d`]
+                    })
+                });
+                responseData['import_country'] = req.body.import_country;
+                responseData['export_country'] = req.body.export_country;
+                responseData = { ...responseData, dutyDetails };
+                d = responseData;
+                console.log("---- d after ==> ", d);
+                dutyResponse.push(d);
             });
             // duty = duty.filter(d => !d.duty_code.includes('mfn'));
-            // console.log(duty);
-            return (duty);
+            console.log("Duty Response -----", dutyResponse);
+            return (dutyResponse);
         } catch (e) {
             console.log(e);
-            return('There was some error, please try again  ' + e);
+            return ('There was some error, please try again  ' + e);
         }
     }
-;
+    ;
 
 module.exports = {
     middleware,
