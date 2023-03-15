@@ -151,9 +151,9 @@ const middleware = (router, middleware) => {
             return e;
         }
     },
-    getDutyfromUserInput = async (req, res, userInput, basevalueref) => {
+    getDutyfromUserInput = async (req, res, userInputData, basevalueref) => {
         try {
-            const selectQ = getDutySelectQueryFromJSON(userInput, req.body);
+            const selectQ = getDutySelectQueryFromJSON(userInputData, req.body);
             let duty = await db.sequelize.query(selectQ, SELECT_OPTIONS).catch(e => {
                 returnError(res, 'Error: ' + e);
             }
@@ -218,11 +218,8 @@ const middleware = (router, middleware) => {
                 responseData['export_country'] = req.body.export_country;
                 responseData = { ...responseData, dutyDetails };
                 d = responseData;
-                console.log("---- d after ==> ", d);
                 dutyResponse.push(d);
             });
-            // duty = duty.filter(d => !d.duty_code.includes('mfn'));
-            console.log("Duty Response -----", dutyResponse);
             return (dutyResponse);
         } catch (e) {
             console.log(e);

@@ -117,12 +117,13 @@ exports.getFTA = async (req, res) => {
         // userInput.push(...mfnInput);
         
     }
-    let returnDataa = [];
-    if (userInput && userInput.length) {
+    let returnDataa = [], userDataLength=userInput && userInput.length, responseData = [];
+    if (userDataLength) {
         for(input of mfnInput) {
-            let userInputTemp = userInput;
+            var userInputTemp = userInput.slice(0,userDataLength-1);
             userInputTemp.push(input);
-            returnDataa.push(await getDutyfromUserInput(req, res, userInputTemp,input));
+            responseData = await getDutyfromUserInput(req, res, userInputTemp,input);
+            returnDataa.push(responseData);
         };
     }
     returnData(res, returnDataa);
