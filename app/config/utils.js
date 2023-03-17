@@ -142,10 +142,18 @@ const middleware = (router, middleware) => {
         try {
             duty = duty.replaceAll(/[a-zA-Z_]+/g, m => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
-                return data.hasOwnProperty(m) ? data[m] : m;
+                let code = m.split("_cl")[0];
+                let valRegEx = new RegExp("("+code+").*(_cl)$","g");
+                let val = Object.keys(data).filter(f=>f.match(valRegEx));
+                return data.hasOwnProperty(m) ? data[m] : 
+                val && val.length ? data.hasOwnProperty([val[0]]) ? data[val[0]]: m : m;
             });
             // return eval(eval(("`" + duty + "`")));
-            return duty.includes('return') ? eval(duty)() : eval(duty);
+             if(duty.includes('return')) {
+                return eval(duty)();
+             } else {
+                return eval(duty);
+             }
         } catch (e) {
             console.error(e);
             return e;
@@ -163,9 +171,11 @@ const middleware = (router, middleware) => {
                 let mfn_col = Object.keys(d).filter(o => o.includes(basevalueref.duty_code) && o.endsWith('cl'));
                 mfn_col = mfn_col.length ? mfn_col[0] : null;
                 let temp = d;
-                if (d[mfn_col].startsWith('ref_')) {
+                if (mfn_col && d[mfn_col].startsWith('ref_')) {
                     let refKeyname = d[mfn_col].replace('ref_', '');
-                    mfn_col = Object.keys(d).filter(o => o.includes(refKeyname));
+                    let clKey = refKeyname.split("_cl")[0];
+                    let regEx = new RegExp("("+clKey+").*(_cl)$","g");
+                    mfn_col = Object.keys(d).filter(o => o.match(regEx))[0];
                 }
                 Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
                 let base_value = !mfn_col ? 0 : isNaN(d[`${mfn_col}`]) ? 0 : d[`${mfn_col}`];
@@ -199,7 +209,6 @@ const middleware = (router, middleware) => {
                         console.log(e);
                     }
                 }
-
 
                 var responseData = {}, dutyDetails = [], groupedData = {}, parseData = d;
                 const groupedDutyKeys = Object.keys(parseData);
