@@ -120,7 +120,7 @@ exports.getFTA = async (req, res) => {
     let returnDataa = [], userDataLength=userInput && userInput.length, responseData = [];
     if (userDataLength) {
         for(input of mfnInput) {
-            var userInputTemp = userInput.slice(0,userDataLength-1);
+            var userInputTemp = userInput.slice(0,userDataLength);
             userInputTemp.push(input);
             responseData = await getDutyfromUserInput(req, res, userInputTemp,input);
             returnDataa.push(responseData);
