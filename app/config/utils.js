@@ -142,18 +142,25 @@ const middleware = (router, middleware) => {
         try {
             duty = duty.replaceAll(/[a-zA-Z_]+/g, m => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
-                let code = m.split("_cl")[0];
-                let valRegEx = new RegExp("("+code+").*(_cl)$","g");
-                let val = Object.keys(data).filter(f=>f.match(valRegEx));
-                return data.hasOwnProperty(m) ? data[m] : 
-                val && val.length ? data.hasOwnProperty([val[0]]) ? data[val[0]]: m : m;
+
+                if (data.hasOwnProperty(m)) {
+                    return data[m];
+                }
+                else {
+                    let code = m.split("_cl")[0];
+                    let valRegEx = new RegExp("(" + code + ").*(_cl)$", "g");
+                    let val = Object.keys(data).filter(f => f.match(valRegEx));
+                    return val && val.length && data[val[0]].match(/[0-9a-zA-Z]+/) ? getCalculatedDuty(data[val[0]],data):
+                     data.hasOwnProperty([val[0]]) ? data[val[0]] : m ;
+                }
+
             });
             // return eval(eval(("`" + duty + "`")));
-             if(duty.includes('return')) {
+            if (duty.includes('return')) {
                 return eval(duty)();
-             } else {
+            } else {
                 return eval(duty);
-             }
+            }
         } catch (e) {
             console.error(e);
             return e;
@@ -174,7 +181,7 @@ const middleware = (router, middleware) => {
                 if (mfn_col && d[mfn_col].startsWith('ref_')) {
                     let refKeyname = d[mfn_col].replace('ref_', '');
                     let clKey = refKeyname.split("_cl")[0];
-                    let regEx = new RegExp("("+clKey+").*(_cl)$","g");
+                    let regEx = new RegExp("(" + clKey + ").*(_cl)$", "g");
                     mfn_col = Object.keys(d).filter(o => o.match(regEx))[0];
                 }
                 Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
