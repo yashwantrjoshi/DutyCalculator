@@ -140,20 +140,19 @@ const middleware = (router, middleware) => {
     getCalculatedDuty = (duty, data) => {
         if (!duty) return duty;
         try {
-            duty = duty.replaceAll(/[a-zA-Z_]+/g, m => {
+            let regEx = new RegExp("[a-zA-Z_]+[0-9]?[a-zA-Z_]+", "g");
+            duty = duty.replaceAll(regEx, m => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
-
-                if (data.hasOwnProperty(m)) {
-                    return data[m];
-                }
-                else {
+                let key = '';
+                if (!data.hasOwnProperty(m)) {
                     let code = m.split("_cl")[0];
                     let valRegEx = new RegExp("(" + code + ").*(_cl)$", "g");
-                    let val = Object.keys(data).filter(f => f.match(valRegEx));
-                    return val && val.length && data[val[0]].match(/[0-9a-zA-Z]+/) ? getCalculatedDuty(data[val[0]],data):
-                     data.hasOwnProperty([val[0]]) ? data[val[0]] : m ;
+                    key = Object.keys(data).filter(f => f.match(valRegEx));
+                    key = key && key.length && key[0];
                 }
-
+                m = key || m;
+                return typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
+                    data.hasOwnProperty(m) ? data[m] : m;
             });
             // return eval(eval(("`" + duty + "`")));
             if (duty.includes('return')) {

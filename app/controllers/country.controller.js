@@ -24,3 +24,10 @@ exports.getHsCodeDetails = async (req, res) => {
 	console.log(hs_codes.length);
 	returnData(res, hs_codes);
 }
+
+exports.getCountryCurrency = async (req, res) => {
+	const { imp } = req.query;
+	const _q = `SELECT exp_cyn AS country, exp_cyn_code AS currency, one_imp_cyn AS unit, unit_exp_cyn AS value FROM cyn where imp_cyn_id='${imp}';`;
+	let currency = await db.sequelize.query(_q, SELECT_OPTIONS);
+	returnData(res, currency);
+}
