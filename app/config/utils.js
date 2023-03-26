@@ -137,6 +137,14 @@ const middleware = (router, middleware) => {
     getAllDutyColumns = (duty, duty_details_description, tblName, import_country) => {
         return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `'${duty_details_description}' as ${import_country}_${duty}_dd`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
     },
+
+    getCalculationKey = (val, data) => {
+        var code = val.split("_cl")[0];
+        var valRegEx = new RegExp("(" + code + ").*(_cl)$", "g");
+        var key = Object.keys(data).filter(f => f.match(valRegEx));
+        return key && key.length && key[0];
+    },
+
     getCalculatedDuty = (duty, data) => {
         if (!duty) return duty;
         try {
@@ -145,10 +153,7 @@ const middleware = (router, middleware) => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
                 let key = '';
                 if (!data.hasOwnProperty(m)) {
-                    let code = m.split("_cl")[0];
-                    let valRegEx = new RegExp("(" + code + ").*(_cl)$", "g");
-                    key = Object.keys(data).filter(f => f.match(valRegEx));
-                    key = key && key.length && key[0];
+                    key = getCalculationKey(m,data);
                 }
                 m = key || m;
                 return typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
@@ -179,9 +184,7 @@ const middleware = (router, middleware) => {
                 let temp = d;
                 if (mfn_col && d[mfn_col].startsWith('ref_')) {
                     let refKeyname = d[mfn_col].replace('ref_', '');
-                    let clKey = refKeyname.split("_cl")[0];
-                    let regEx = new RegExp("(" + clKey + ").*(_cl)$", "g");
-                    mfn_col = Object.keys(d).filter(o => o.match(regEx))[0];
+                    mfn_col = getCalculationKey(refKeyname,d);
                 }
                 Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
                 let base_value = !mfn_col ? 0 : isNaN(d[`${mfn_col}`]) ? 0 : d[`${mfn_col}`];
@@ -203,8 +206,14 @@ const middleware = (router, middleware) => {
                 });
                 if (d.hasOwnProperty('total')) {
                     try {
-                        d['total_formulae'] = d['total'];
-                        d['total'] = d['total'].replaceAll(/[a-zA-Z_]+/g, "${!temp['$&'] || isNaN(temp['$&'])?0:temp['$&']}");
+                        let totalTemp = d['total'];
+                        totalTemp = totalTemp.replaceAll(/[a-zA-Z_]+/g, val => {
+                            let key = getCalculationKey(val,d);
+                            return d.hasOwnProperty(val) ? val : key; 
+                        });
+
+                        d['total_formulae'] = d['total'] = totalTemp;
+                        d['total'] = d['total'].replaceAll(/[a-zA-Z_]+[0-9]?[a-zA-Z_]+/g, "${!temp['$&'] || isNaN(temp['$&'])?0:temp['$&']}");
                         d['total_formulae2'] = d['total'];
                         // let temp = d;
                         // Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
@@ -256,5 +265,6 @@ module.exports = {
     R40X,
     getDutySelectQueryFromJSON,
     getCalculatedDuty,
-    getDutyfromUserInput
+    getDutyfromUserInput,
+    getCalculationKey
 }

@@ -1,6 +1,5 @@
 const db = require("../models");
-const {getDutySelectQueryFromJSON, getCalculatedDuty, getDutyfromUserInput} = require("../config/utils");
-const {getSelectQueryFromJSON} = require("../config/utils");
+const {getDutySelectQueryFromJSON, getCalculatedDuty, getDutyfromUserInput, getCalculationKey} = require("../config/utils");
 const {SELECT_OPTIONS} = require("../config/CONSTANT");
 const {returnData, returnError} = require("../config/db.common");
 
@@ -53,15 +52,19 @@ exports.getDuty = async (req, res) => {
                     if (key.endsWith('_cl')) {
                         d[`${key}_formulae`] = d[key];
                         d['base_value'] = base_value;
-                        // console.log('base_value', d['base_value'])
                         Object.keys(req.body).forEach(bodyKey => d[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
                         d[key] = getCalculatedDuty(d[key], d);
                     }
                 });
                 if (d.hasOwnProperty('total')) {
                     try {
-                        d['total_formulae'] = d['total'];
-                        d['total'] = d['total'].replaceAll(/[a-zA-Z_]+/g, "${!temp['$&'] || isNaN(temp['$&'])?0:temp['$&']}");
+                        let totalTemp = d['total'];
+                        totalTemp = totalTemp.replaceAll(/[a-zA-Z_]+/g, val => {
+                            let key = getCalculationKey(val,d);
+                            return d.hasOwnProperty(val) ? val : key; 
+                        });
+                        d['total_formulae'] = d['total'] = totalTemp;
+                        d['total'] = d['total'].replaceAll(/[a-zA-Z_]+[0-9]?[a-zA-Z_]+/g, "${!temp['$&'] || isNaN(temp['$&'])?0:temp['$&']}");
                         d['total_formulae2'] = d['total'];
                         // let temp = d;
                         // Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
