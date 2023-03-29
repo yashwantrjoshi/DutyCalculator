@@ -91,9 +91,9 @@ const middleware = (router, middleware) => {
         return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `'${duty_details_description}' as ${import_country}_${duty}_dd`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
     },
 
-    getCalculationKey = (val, data) => {
-        var code = val.split("_cl")[0];
-        var valRegEx = new RegExp("(" + code + ").*(_cl)$", "g");
+    getCalculationKey = (val, data, type="_cl") => {
+        var code = val.split(type)[0];
+        var valRegEx = new RegExp("(" + code + ").*(" + type +")$", "g");
         var key = Object.keys(data).filter(f => f.match(valRegEx));
         return key && key.length && key[key.length - 1];
     },
@@ -156,9 +156,12 @@ const middleware = (router, middleware) => {
                 });
 
                 Object.keys(d).forEach(key => {
-                    if (key.endsWith('_cl')) {
+                    if (key.endsWith('_cl') || key.endsWith('_d')) {
                         if (d[key].startsWith('ref_')) {
                             let refKey = d[key].replace('ref_', '');
+                            let getType = key.split("_");
+                            let type= `_${getType[getType.length - 1]}`;
+                            refKey = getCalculationKey(refKey,d,type);
                             d[key] = d[refKey];
                         }
                         else {
