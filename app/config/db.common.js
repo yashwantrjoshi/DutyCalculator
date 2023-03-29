@@ -1,7 +1,7 @@
 const db = require("../models");
 const {QueryTypes} = require("sequelize");
 const moment = require("moment");
-const {HTTP_STATUS_CODE, dbOptions, dbOptionsWithLogging} = require("./utils");
+const { HTTP_STATUS_CODE, SELECT_OPTIONS } = require("./CONSTANT");
 
 const Internal = {
     isNumeric: (num) => !isNaN(num),
@@ -184,7 +184,7 @@ const
             return new Promise(resolve => {
                 const _query = `select ${fields} from "${_org_id}".${_object} ${_where};`;
                 //console.log("Query runnerSelect==", _query);
-                db.sequelize.query(_query, dbOptionsWithLogging).then(rows => {
+                db.sequelize.query(_query, SELECT_OPTIONS).then(rows => {
                     if (rows && rows.length > 0 && rows[0].length > 0) resolve(rows[0][rows[0].length - 1]);
                     else if (rows && rows.length > 0) resolve(rows[rows.length - 1]);
                     else resolve(null);

@@ -56,53 +56,6 @@ const middleware = (router, middleware) => {
             return typeof args[index] == 'undefined' ? match : args[index];
         });
     },
-    HTTP_STATUS_CODE = {
-        CONTINUE: 100,
-        SWITCHING_PROTOCOLS: 101,
-        /** OK 200 */
-        OK: 200,
-        CREATED: 201,
-        ACCEPTED: 202,
-        NON_AUTHORITATIVE_INFORMATION: 203,
-        /** NO_CONTENT: 204 */
-        NO_CONTENT: 204,
-        RESET_CONTENT: 205,
-        PARTIAL_CONTENT: 206,
-        MULTIPLE_CHOICES: 300,
-        MOVED_PERMANENTLY: 301,
-        FOUND: 302,
-        SEE_OTHER: 303,
-        NOT_MODIFIED: 304,
-        USE_PROXY: 305,
-        TEMPORARY_REDIRECT: 307,
-
-        BAD_REQUEST: 400,
-        UNAUTHORIZED: 401,
-        PAYMENT_REQUIRED: 402,
-        FORBIDDEN: 403,
-        NOT_FOUND: 404,
-        METHOD_NOT_ALLOWED: 405,
-        NOT_ACCEPTABLE: 406,
-        PROXY_AUTHENTICATION_REQUIRED: 407,
-        REQUEST_TIMEOUT: 408,
-        CONFLICT: 409,
-        GONE: 410,
-        LENGTH_REQUIRED: 411,
-        PRECONDITION_FAILED: 412,
-        PAYLOAD_TOO_LARGE: 413,
-        URI_TOO_LONG: 414,
-        UNSUPPORTED_MEDIA_TYPE: 415,
-        RANGE_NOT_SATISFIABLE: 416,
-        EXPECTATION_FAILED: 417,
-        UPGRADE_REQUIRED: 426,
-
-        INTERNAL_SERVER_ERROR: 500,
-        NOT_IMPLEMENTED: 501,
-        BAD_GATEWAY: 502,
-        SERVICE_UNAVAILABLE: 503,
-        GATEWAY_TIMEOUT: 504,
-        HTTP_VERSION_NOT_SUPPORTED: 505
-    },
     R20X = (res, data, status = 200, message = null, error = null) => {
         res.status(status).json({ message: message, result: data, error: error });
         return true;
@@ -142,7 +95,7 @@ const middleware = (router, middleware) => {
         var code = val.split("_cl")[0];
         var valRegEx = new RegExp("(" + code + ").*(_cl)$", "g");
         var key = Object.keys(data).filter(f => f.match(valRegEx));
-        return key && key.length && key[0];
+        return key && key.length && key[key.length - 1];
     },
 
     getCalculatedDuty = (duty, data) => {
@@ -191,12 +144,24 @@ const middleware = (router, middleware) => {
                 base_value = getCalculatedDuty(d[mfn_col], temp);
                 temp['base_value'] = d['base_value'] = base_value;
                 //  d[mfn_col] = getCalculatedDuty(d[mfn_col], temp);
+
+                Object.keys(d).forEach(key => {
+                    if(key.match(/(_d)$/) && d[key].toLowerCase() === "n/a") {
+                        let refKeyname = key.split(/(_d)$/)[0];
+                        delete d[key];
+                        delete d[`${refKeyname}_dd`];
+                        delete d[`${refKeyname}_cl`];
+                        delete d[`${refKeyname}_f`];
+                    } 
+                });
+
                 Object.keys(d).forEach(key => {
                     if (key.endsWith('_cl')) {
                         if (d[key].startsWith('ref_')) {
                             let refKey = d[key].replace('ref_', '');
                             d[key] = d[refKey];
-                        } else {
+                        }
+                        else {
                             d[`${key}_formulae`] = d[key];
                             d['base_value'] = base_value;
                             Object.keys(req.body).forEach(bodyKey => d[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
@@ -209,9 +174,8 @@ const middleware = (router, middleware) => {
                         let totalTemp = d['total'];
                         totalTemp = totalTemp.replaceAll(/[a-zA-Z_]+/g, val => {
                             let key = getCalculationKey(val,d);
-                            return d.hasOwnProperty(val) ? val : key; 
+                            return d.hasOwnProperty(val) ? val : key && d.hasOwnProperty(key) ? key : 0; 
                         });
-
                         d['total_formulae'] = d['total'] = totalTemp;
                         d['total'] = d['total'].replaceAll(/[a-zA-Z_]+[0-9]?[a-zA-Z_]+/g, "${!temp['$&'] || isNaN(temp['$&'])?0:temp['$&']}");
                         d['total_formulae2'] = d['total'];
@@ -259,7 +223,6 @@ module.exports = {
     format,
     printInline,
     replaceDoubleUnderscore,
-    HTTP_STATUS_CODE,
     replaceDoubleUnderscore,
     R20X,
     R40X,

@@ -1,5 +1,5 @@
 const db = require("../models");
-const {R20X, R40X, HTTP_STATUS_CODE} = require("../config/utils");
+const {R20X, R40X} = require("../config/utils");
 const {JWT} = require("../middlewares/authJwt");
 const request = require('request');
 const {Op, QueryTypes} = require("sequelize");
