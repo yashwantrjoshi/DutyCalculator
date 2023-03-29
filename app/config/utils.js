@@ -110,7 +110,7 @@ const middleware = (router, middleware) => {
                 }
                 m = key || m;
                 return typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
-                    data.hasOwnProperty(m) ? data[m] : m;
+                    data.hasOwnProperty(m) ? data[m] : m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : 0;
             });
             // return eval(eval(("`" + duty + "`")));
             if (duty.includes('return')) {

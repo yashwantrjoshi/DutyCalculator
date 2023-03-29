@@ -30,11 +30,9 @@ exports.getDuty = async (req, res) => {
     if (userInput && userInput.length) {
         try {
             const selectQ = getDutySelectQueryFromJSON(userInput, req.body);
-            // console.log('selectQ', selectQ);
             let duty = await db.sequelize.query(selectQ, SELECT_OPTIONS).catch(e => {
                 returnError(res, 'Error: ' + e);
             });
-            console.log("duty == ", duty);
             duty && duty.forEach(d => {
                 let mfn_col = Object.keys(d).filter(o => o.includes('mfn') && o.endsWith('cl'));
                 mfn_col = mfn_col.length ? mfn_col[0] : null;
