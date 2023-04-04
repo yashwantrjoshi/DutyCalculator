@@ -91,26 +91,32 @@ const middleware = (router, middleware) => {
         return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `'${duty_details_description}' as ${import_country}_${duty}_dd`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
     },
 
-    getCalculationKey = (val, data, type="_cl") => {
+    getCalculationKey = (val, data, type = "_cl") => {
         var code = val.split(type)[0];
-        var valRegEx = new RegExp("(" + code + ").*(" + type +")$", "g");
+        var valRegEx = new RegExp("(" + code + ").*(" + type + ")$", "g");
         var key = Object.keys(data).filter(f => f.match(valRegEx));
         return key && key.length && key[key.length - 1];
+    },
+
+    checkifFunction = (key, expr, data) => {
+        let regEx = new RegExp("[a-zA-Z_]+[0-9]?[a-zA-Z_]+", "g");
+        return key.match(regEx) && expr.match(/^\(\(\)\s{0,2}\=\>/) ? data.hasOwnProperty(key) ? data[key] : key : 0;
     },
 
     getCalculatedDuty = (duty, data) => {
         if (!duty) return duty;
         try {
             let regEx = new RegExp("[a-zA-Z_]+[0-9]?[a-zA-Z_]+", "g");
+            let temp=duty;
             duty = duty.replaceAll(regEx, m => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
                 let key = '';
                 if (!data.hasOwnProperty(m)) {
-                    key = getCalculationKey(m,data);
+                    key = getCalculationKey(m, data);
                 }
                 m = key || m;
                 return typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
-                    data.hasOwnProperty(m) ? data[m] : m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : 0;
+                    data.hasOwnProperty(m) ? data[m] : m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp,data);
             });
             // return eval(eval(("`" + duty + "`")));
             if (duty.includes('return')) {
@@ -137,7 +143,7 @@ const middleware = (router, middleware) => {
                 let temp = d;
                 if (mfn_col && d[mfn_col].startsWith('ref_')) {
                     let refKeyname = d[mfn_col].replace('ref_', '');
-                    mfn_col = getCalculationKey(refKeyname,d);
+                    mfn_col = getCalculationKey(refKeyname, d);
                 }
                 Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
                 let base_value = !mfn_col ? 0 : isNaN(d[`${mfn_col}`]) ? 0 : d[`${mfn_col}`];
@@ -146,22 +152,25 @@ const middleware = (router, middleware) => {
                 //  d[mfn_col] = getCalculatedDuty(d[mfn_col], temp);
 
                 Object.keys(d).forEach(key => {
-                    if(key.match(/(_d)$/) && d[key].toLowerCase() === "n/a") {
+                    if (key.match(/(_d)$/) && d[key].toLowerCase() === "n/a") {
                         let refKeyname = key.split(/(_d)$/)[0];
                         delete d[key];
                         delete d[`${refKeyname}_dd`];
                         delete d[`${refKeyname}_cl`];
                         delete d[`${refKeyname}_f`];
-                    } 
+                    }
                 });
 
                 Object.keys(d).forEach(key => {
-                    if (key.endsWith('_cl') || key.endsWith('_d')) {
+                    if (key.endsWith('_d') && d[key].startsWith('ref_')) {
+                        let refKey = d[key].replace('ref_', '');
+                        refKey = getCalculationKey(refKey, d, "_d");
+                        d[key] = d[refKey];
+                    }
+                    else if (key.endsWith('_cl')) {
                         if (d[key].startsWith('ref_')) {
                             let refKey = d[key].replace('ref_', '');
-                            let getType = key.split("_");
-                            let type= `_${getType[getType.length - 1]}`;
-                            refKey = getCalculationKey(refKey,d,type);
+                            refKey = getCalculationKey(refKey, d);
                             d[key] = d[refKey];
                         }
                         else {
@@ -176,8 +185,8 @@ const middleware = (router, middleware) => {
                     try {
                         let totalTemp = d['total'];
                         totalTemp = totalTemp.replaceAll(/[a-zA-Z_]+/g, val => {
-                            let key = getCalculationKey(val,d);
-                            return d.hasOwnProperty(val) ? val : key && d.hasOwnProperty(key) ? key : 0; 
+                            let key = getCalculationKey(val, d);
+                            return d.hasOwnProperty(val) ? val : key && d.hasOwnProperty(key) ? key : 0;
                         });
                         d['total_formulae'] = d['total'] = totalTemp;
                         d['total'] = d['total'].replaceAll(/[a-zA-Z_]+[0-9]?[a-zA-Z_]+/g, "${!temp['$&'] || isNaN(temp['$&'])?0:temp['$&']}");
