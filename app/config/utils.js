@@ -93,7 +93,7 @@ const middleware = (router, middleware) => {
 
     getCalculationKey = (val, data, type = "_cl") => {
         var code = val.split(type)[0];
-        var valRegEx = new RegExp("(" + code + ").*(" + type + ")$", "g");
+        var valRegEx = new RegExp("^(" + code + ").?(" + type + ")$", "g");
         var key = Object.keys(data).filter(f => f.match(valRegEx));
         return key && key.length && key[key.length - 1];
     },
