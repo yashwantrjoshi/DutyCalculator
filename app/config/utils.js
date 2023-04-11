@@ -99,14 +99,14 @@ const middleware = (router, middleware) => {
     },
 
     checkifFunction = (key, expr, data) => {
-        let regEx = new RegExp("[a-zA-Z_]+[0-9]?[a-zA-Z_]+", "g");
+        let regEx = new RegExp("[a-zA-Z_]+[0-9]?[a-zA-Z_]*", "g");
         return key.match(regEx) && expr.match(/^\(\(\)\s{0,2}\=\>/) ? data.hasOwnProperty(key) ? data[key] : key : 0;
     },
 
     getCalculatedDuty = (duty, data) => {
         if (!duty) return duty;
         try {
-            let regEx = new RegExp("[a-zA-Z_]+[0-9]?[a-zA-Z_]+", "g");
+            let regEx = new RegExp("[a-zA-Z_]+[0-9]*[a-zA-Z_]*", "g");
             let temp=duty;
             duty = duty.replaceAll(regEx, m => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
@@ -115,8 +115,8 @@ const middleware = (router, middleware) => {
                     key = getCalculationKey(m, data);
                 }
                 m = key || m;
-                return typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
-                    data.hasOwnProperty(m) ? data[m] : m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp,data);
+                return data.hasOwnProperty(m) ? data[m] : !data.hasOwnProperty(m) && typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
+                      m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp,data);
             });
             // return eval(eval(("`" + duty + "`")));
             if (duty.includes('return')) {
@@ -140,12 +140,12 @@ const middleware = (router, middleware) => {
             duty && duty.forEach(d => {
                 let mfn_col = Object.keys(d).filter(o => o.includes(basevalueref.duty_code) && o.endsWith('cl'));
                 mfn_col = mfn_col.length ? mfn_col[0] : null;
-                let temp = d;
                 if (mfn_col && d[mfn_col].startsWith('ref_')) {
                     let refKeyname = d[mfn_col].replace('ref_', '');
                     mfn_col = getCalculationKey(refKeyname, d);
                 }
-                Object.keys(req.body).forEach(bodyKey => temp[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
+                Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey] != null ? req.body[bodyKey] : 0);
+                let temp = d;
                 let base_value = !mfn_col ? 0 : isNaN(d[`${mfn_col}`]) ? 0 : d[`${mfn_col}`];
                 base_value = getCalculatedDuty(d[mfn_col], temp);
                 temp['base_value'] = d['base_value'] = base_value;
@@ -176,7 +176,7 @@ const middleware = (router, middleware) => {
                         else {
                             d[`${key}_formulae`] = d[key];
                             d['base_value'] = base_value;
-                            Object.keys(req.body).forEach(bodyKey => d[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
+                            Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey]!=null ? req.body[bodyKey] : 0);
                             d[key] = getCalculatedDuty(d[key], d);
                         }
                     }
