@@ -1,5 +1,5 @@
 const db = require("../models");
-const { getDutySelectQueryFromJSON, getCalculatedDuty, getDutyfromUserInput, getCalculationKey } = require("../config/utils");
+const { getDutySelectQueryFromJSON, getCalculatedDuty, getDutyfromUserInput, getCalculationKey, checkifFunction } = require("../config/utils");
 const { SELECT_OPTIONS } = require("../config/CONSTANT");
 const { returnData, returnError } = require("../config/db.common");
 
@@ -52,11 +52,15 @@ exports.getDuty = async (req, res) => {
                         delete d[`${refKeyname}_f`];
                     }
                 });
+                Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey] != null ? req.body[bodyKey] : 0);
                 Object.keys(d).forEach(key => {
-                    if (key.endsWith('_cl')) {
+                    if (key.endsWith('_d')) {
+                        let dataKey = checkifFunction(key, d[key], d);
+                        d[key] = dataKey && getCalculatedDuty(d[key], d) || d[key];
+                    }
+                    else if (key.endsWith('_cl')) {
                         d[`${key}_formulae`] = d[key];
                         d['base_value'] = base_value;
-                        Object.keys(req.body).forEach(bodyKey => d[bodyKey] = !isNaN(req.body[bodyKey]) ? req.body[bodyKey] : 0);
                         d[key] = getCalculatedDuty(d[key], d);
                     }
                 });

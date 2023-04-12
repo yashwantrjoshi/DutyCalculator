@@ -107,7 +107,7 @@ const middleware = (router, middleware) => {
         if (!duty) return duty;
         try {
             let regEx = new RegExp("[a-zA-Z_]+[0-9]*[a-zA-Z_]*", "g");
-            let temp=duty;
+            let temp = duty;
             duty = duty.replaceAll(regEx, m => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
                 let key = '';
@@ -116,7 +116,7 @@ const middleware = (router, middleware) => {
                 }
                 m = key || m;
                 return data.hasOwnProperty(m) ? data[m] : !data.hasOwnProperty(m) && typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
-                      m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp,data);
+                    m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp, data);
             });
             // return eval(eval(("`" + duty + "`")));
             if (duty.includes('return')) {
@@ -162,10 +162,16 @@ const middleware = (router, middleware) => {
                 });
 
                 Object.keys(d).forEach(key => {
-                    if (key.endsWith('_d') && d[key].startsWith('ref_')) {
-                        let refKey = d[key].replace('ref_', '');
-                        refKey = getCalculationKey(refKey, d, "_d");
-                        d[key] = d[refKey];
+                    if (key.endsWith('_d')) {
+                        if (d[key].startsWith('ref_')) {
+                            let refKey = d[key].replace('ref_', '');
+                            refKey = getCalculationKey(refKey, d, "_d");
+                            d[key] = d[refKey];
+                        }
+                        else {
+                            let dataKey= checkifFunction(key,d[key],d);
+                            d[key]= dataKey && getCalculatedDuty(d[key],d);
+                        }
                     }
                     else if (key.endsWith('_cl')) {
                         if (d[key].startsWith('ref_')) {
@@ -176,7 +182,7 @@ const middleware = (router, middleware) => {
                         else {
                             d[`${key}_formulae`] = d[key];
                             d['base_value'] = base_value;
-                            Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey]!=null ? req.body[bodyKey] : 0);
+                            Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey] != null ? req.body[bodyKey] : 0);
                             d[key] = getCalculatedDuty(d[key], d);
                         }
                     }
@@ -241,5 +247,6 @@ module.exports = {
     getDutySelectQueryFromJSON,
     getCalculatedDuty,
     getDutyfromUserInput,
-    getCalculationKey
+    getCalculationKey,
+    checkifFunction
 }
