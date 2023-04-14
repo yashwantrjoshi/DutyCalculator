@@ -170,7 +170,7 @@ const middleware = (router, middleware) => {
                         }
                         else {
                             let dataKey= checkifFunction(key,d[key],d);
-                            d[key]= dataKey && getCalculatedDuty(d[key],d);
+                            d[key]= dataKey && getCalculatedDuty(d[key],d) || d[key];
                         }
                     }
                     else if (key.endsWith('_cl')) {
