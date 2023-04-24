@@ -137,7 +137,7 @@ exports.getFTA = async (req, res) => {
         for (input of mfnInput) {
             var userInputTemp = userInput.slice(0, userDataLength);
             userInputTemp.push(input);
-            responseData = await getDutyfromUserInput(req, res, userInputTemp, input);
+            responseData = await getDutyfromUserInput(req, res, userInputTemp, input, true);
             returnDataa.push(responseData);
         };
     }

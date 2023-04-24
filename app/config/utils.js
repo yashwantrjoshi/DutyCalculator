@@ -65,7 +65,7 @@ const middleware = (router, middleware) => {
         res.status(status).json({ error: _error });
         return false;
     },
-    getDutySelectQueryFromJSON = (dataJSON, reqBody, isFTA = false) => {
+    getDutySelectQueryFromJSON = (dataJSON, reqBody) => {
         let colList = ['hs', 'des', 'cyn', 'ui', 'total'], refCols = [];
         colList = colList.map(col => `${reqBody.import_country}.${reqBody.import_country}_${col} as ${col}`);
         dataJSON.filter(o => !o.ref).forEach(col => {
@@ -91,11 +91,11 @@ const middleware = (router, middleware) => {
         return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `'${duty_details_description}' as ${import_country}_${duty}_dd`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
     },
 
-    getCalculationKey = (val, data, type = "_cl") => {
+    getCalculationKey = (val, data, type = "_cl",isFTA=false) => {
         var code = val.split(type)[0];
         var valRegEx = new RegExp("^(" + code + ").?(" + type + ")$", "g");
         var key = Object.keys(data).filter(f => f.match(valRegEx));
-        return key && key.length && key[key.length - 1];
+        return key && key.length && (isFTA && key[key.length - 1] || key[0]);
     },
 
     checkifFunction = (key, expr, data) => {
@@ -103,7 +103,7 @@ const middleware = (router, middleware) => {
         return key.match(regEx) && expr.match(/^\(\(\)\s{0,2}\=\>/) ? data.hasOwnProperty(key) ? data[key] : key : 0;
     },
 
-    getCalculatedDuty = (duty, data) => {
+    getCalculatedDuty = (duty, data,isFTA=false) => {
         if (!duty) return duty;
         try {
             let regEx = new RegExp("[a-zA-Z_]+[0-9]*[a-zA-Z_]*", "g");
@@ -112,10 +112,10 @@ const middleware = (router, middleware) => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
                 let key = '';
                 if (!data.hasOwnProperty(m)) {
-                    key = getCalculationKey(m, data);
+                    key = getCalculationKey(m, data,"_cl",isFTA);
                 }
                 m = key || m;
-                return data.hasOwnProperty(m) ? data[m] : !data.hasOwnProperty(m) && typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
+                return data.hasOwnProperty(m) && typeof data[m] != 'string' ? data[m] : typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
                     m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp, data);
             });
             // return eval(eval(("`" + duty + "`")));
@@ -129,7 +129,7 @@ const middleware = (router, middleware) => {
             return e;
         }
     },
-    getDutyfromUserInput = async (req, res, userInputData, basevalueref) => {
+    getDutyfromUserInput = async (req, res, userInputData, basevalueref,isFTA) => {
         try {
             const selectQ = getDutySelectQueryFromJSON(userInputData, req.body);
             let duty = await db.sequelize.query(selectQ, SELECT_OPTIONS).catch(e => {
@@ -147,7 +147,7 @@ const middleware = (router, middleware) => {
                 Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey] != null ? req.body[bodyKey] : 0);
                 let temp = d;
                 let base_value = !mfn_col ? 0 : isNaN(d[`${mfn_col}`]) ? 0 : d[`${mfn_col}`];
-                base_value = getCalculatedDuty(d[mfn_col], temp);
+                base_value = getCalculatedDuty(d[mfn_col], temp, isFTA);
                 temp['base_value'] = d['base_value'] = base_value;
                 //  d[mfn_col] = getCalculatedDuty(d[mfn_col], temp);
 
@@ -170,7 +170,7 @@ const middleware = (router, middleware) => {
                         }
                         else {
                             let dataKey= checkifFunction(key,d[key],d);
-                            d[key]= dataKey && getCalculatedDuty(d[key],d) || d[key];
+                            d[key]= dataKey && getCalculatedDuty(d[key],d, isFTA) || d[key];
                         }
                     }
                     else if (key.endsWith('_cl')) {
@@ -183,7 +183,7 @@ const middleware = (router, middleware) => {
                             d[`${key}_formulae`] = d[key];
                             d['base_value'] = base_value;
                             Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey] != null ? req.body[bodyKey] : 0);
-                            d[key] = getCalculatedDuty(d[key], d);
+                            d[key] = getCalculatedDuty(d[key], d,isFTA);
                         }
                     }
                 });
