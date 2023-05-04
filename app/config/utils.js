@@ -65,6 +65,16 @@ const middleware = (router, middleware) => {
         res.status(status).json({ error: _error });
         return false;
     },
+    sortInputForMode = (dutyInput, mode) => {
+        let data = [];
+        dutyInput && dutyInput.forEach(d=> {
+            if(d.mode == "all") { data.push(d);}
+            else if(d.mode == mode.toLowerCase()) {
+                data.push(d);
+            }
+        });
+        return data;
+    },
     getDutySelectQueryFromJSON = (dataJSON, reqBody) => {
         let colList = ['hs', 'des', 'cyn', 'ui', 'total'], refCols = [];
         colList = colList.map(col => `${reqBody.import_country}.${reqBody.import_country}_${col} as ${col}`);
@@ -244,6 +254,7 @@ module.exports = {
     replaceDoubleUnderscore,
     R20X,
     R40X,
+    sortInputForMode,
     getDutySelectQueryFromJSON,
     getCalculatedDuty,
     getDutyfromUserInput,

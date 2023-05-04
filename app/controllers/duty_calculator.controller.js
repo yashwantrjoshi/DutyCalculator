@@ -1,5 +1,5 @@
 const db = require("../models");
-const { getDutySelectQueryFromJSON, getCalculatedDuty, getDutyfromUserInput, getCalculationKey, checkifFunction } = require("../config/utils");
+const { sortInputForMode, getDutySelectQueryFromJSON, getCalculatedDuty, getDutyfromUserInput, getCalculationKey, checkifFunction } = require("../config/utils");
 const { SELECT_OPTIONS } = require("../config/CONSTANT");
 const { returnData, returnError } = require("../config/db.common");
 
@@ -19,16 +19,18 @@ exports.getUserInput = async (req, res) => {
     }
     returnError(res, 'No data, please check the input');
 }
+
 exports.getDuty = async (req, res) => {
     if (!req.body.hscode || !req.body.import_country || !req.body.export_country)
         returnError(res, 'Invalid Input');
-    let userInput = await db.sequelize.query(`SELECT duty_code, duty_details_description, remarks, ref
+    let userInput = await db.sequelize.query(`SELECT duty_code, duty_details_description, remarks, ref, mode
                                               FROM master_duty_details
                                               WHERE imp_country_code = '${req.body.import_country}'
                                                 AND (exp_country_code LIKE '%${req.body.export_country}%'
                                                   OR exp_country_code = 'all')`, SELECT_OPTIONS);
     if (userInput && userInput.length) {
         try {
+            userInput = sortInputForMode(userInput, req.body.mode);
             const selectQ = getDutySelectQueryFromJSON(userInput, req.body);
             let duty = await db.sequelize.query(selectQ, SELECT_OPTIONS).catch(e => {
                 returnError(res, 'Error: ' + e);
@@ -85,7 +87,7 @@ exports.getDuty = async (req, res) => {
                     }
                 }
             });
-            var responseData = {}, dutyDetails = [], groupedData = {}, parseData = duty[0];
+            var responseData = {}, dutyDetails = [], groupedData = {}, parseData = duty && duty[0];
             const groupedDutyKeys = Object.keys(parseData);
             groupedDutyKeys.forEach((key) => {
                 key.match(/(_cl|_d|_dd)$/) ?
@@ -116,11 +118,12 @@ exports.getDuty = async (req, res) => {
 exports.getFTA = async (req, res) => {
     if (!req.body.hscode || !req.body.import_country || !req.body.export_country)
         returnError(res, 'Invalid Input');
-    let userInput = await db.sequelize.query(`SELECT duty_code, duty_details_description, remarks, ref
+    let userInput = await db.sequelize.query(`SELECT duty_code, duty_details_description, remarks, ref, mode
                                               FROM master_duty_details
                                               WHERE imp_country_code = '${req.body.import_country}'
                                                 AND (exp_country_code LIKE '%${req.body.export_country}%'
                                                   OR exp_country_code = 'all')`, SELECT_OPTIONS);
+    userInput = sortInputForMode(userInput, req.body.mode);
     let mfnCol = userInput.filter(k => k.duty_code.includes('mfn'));
     let mfnInput = null;
     if (mfnCol.length > 0) {
