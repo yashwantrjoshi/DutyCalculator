@@ -1,11 +1,11 @@
 const db = require("../models");
-const {getDutySelectQueryFromJSON, getCalculatedDuty} = require("../config/utils");
-const {getSelectQueryFromJSON} = require("../config/utils");
-const {SELECT_OPTIONS} = require("../config/CONSTANT");
-const {returnData, returnError} = require("../config/db.common");
+const { getDutySelectQueryFromJSON, getCalculatedDuty } = require("../config/utils");
+const { getSelectQueryFromJSON } = require("../config/utils");
+const { SELECT_OPTIONS } = require("../config/CONSTANT");
+const { returnData, returnError } = require("../config/db.common");
 
 exports.getHsCode = async (req, res) => {
-	const {q} = req.query;
+	const { q } = req.query;
 	if (!q) return returnError(res, "Please provide a search query", 400);
 	if (q && q.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
 	let hs_codes = await db.sequelize.query(`select * from hs_codes where product like '${q}%' or hs_code like '${q}%' order by hs_code limit 20;`, SELECT_OPTIONS);
@@ -14,25 +14,30 @@ exports.getHsCode = async (req, res) => {
 }
 
 exports.getHsCodeDetails = async (req, res) => {
-	const {hs} = req.query;
+	const { hs } = req.query;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
 	const _hs = parseInt(hs);
-	const _q = `SELECT * FROM hs_codes_details WHERE hs2 = '${hs}' OR hs4 = '${hs}' OR hs6 = '${hs}' OR hs2 = '${_hs}' OR hs4 = '${_hs}' OR hs6 = '${_hs}' OR hs2_des LIKE '%${hs}%' OR hs4_des LIKE '%${hs}%'OR hs6_des LIKE '%${hs}%' limit 100;`;
-	console.log(_q);
+	let _q = "";
+	if (_hs) {
+		if (hs.length % 2 !== 0) { return returnError(res, "Please enter 2, 4 or 6 digit hs code", 400); }
+		_q = `SELECT * FROM hs_codes_details WHERE hs2 = '${hs}' OR hs4 = '${hs}' OR hs6 = '${hs}' limit 100;`;
+	}
+	else {
+		_q = `SELECT * FROM hs_codes_details WHERE hs2_des LIKE '%${hs}%' OR hs4_des LIKE '%${hs}%' OR hs6_des LIKE '%${hs}%' limit 100;`;
+	}
 	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
-	console.log(hs_codes.length);
 	returnData(res, hs_codes);
 }
 
 exports.getUserInput = async (req, res) => {
-	const {hs, imp} = req.query;
+	const { hs, imp } = req.query;
 	let data = [];
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
 	const _q = `SELECT ${imp}_ui FROM ${imp} WHERE ${imp}_hs = '${hs}';`;
 	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
-	if(hs_codes.length > 0) {
+	if (hs_codes.length > 0) {
 		data = hs_codes[0][`${imp}_ui`];
 		data = data ? JSON.parse(data) : [];
 	}
@@ -40,7 +45,7 @@ exports.getUserInput = async (req, res) => {
 }
 
 exports.getProductFromCountryCode = async (req, res) => {
-	const {hs, imp} = req.query;
+	const { hs, imp } = req.query;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
 	const _q = `SELECT ${imp}_hs AS value, concat(${imp}_hs,' - ',${imp}_des) AS label FROM ${imp} WHERE ${imp}_hs like '${hs}%';`;
