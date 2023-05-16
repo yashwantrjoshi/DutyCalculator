@@ -67,9 +67,9 @@ const middleware = (router, middleware) => {
     },
     sortInputForMode = (dutyInput, mode) => {
         let data = [];
-        dutyInput && dutyInput.forEach(d=> {
-            if(d.mode == "all") { data.push(d);}
-            else if(d.mode == mode.toLowerCase()) {
+        dutyInput && dutyInput.forEach(d => {
+            if (d.mode == "all") { data.push(d); }
+            else if (d.mode == mode.toLowerCase()) {
                 data.push(d);
             }
         });
@@ -101,7 +101,7 @@ const middleware = (router, middleware) => {
         return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `'${duty_details_description}' as ${import_country}_${duty}_dd`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
     },
 
-    getCalculationKey = (val, data, type = "_cl",isFTA=false) => {
+    getCalculationKey = (val, data, type = "_cl", isFTA = false) => {
         var code = val.split(type)[0];
         var valRegEx = new RegExp("^(" + code + ").?(" + type + ")$", "g");
         var key = Object.keys(data).filter(f => f.match(valRegEx));
@@ -113,7 +113,7 @@ const middleware = (router, middleware) => {
         return key.match(regEx) && expr.match(/^\(\(\)\s{0,2}\=\>/) ? data.hasOwnProperty(key) ? data[key] : key : 0;
     },
 
-    getCalculatedDuty = (duty, data,isFTA=false) => {
+    getCalculatedDuty = (duty, data, isFTA = false) => {
         if (!duty) return duty;
         try {
             let regEx = new RegExp("[a-zA-Z_]+[0-9]*[a-zA-Z_]*", "g");
@@ -122,11 +122,15 @@ const middleware = (router, middleware) => {
                 // return req.body[m] ? `$\{req.body.${m}}` : m;
                 let key = '';
                 if (!data.hasOwnProperty(m)) {
-                    key = getCalculationKey(m, data,"_cl",isFTA);
+                    key = getCalculationKey(m, data, "_cl", isFTA);
                 }
                 m = key || m;
-                return data.hasOwnProperty(m) && typeof data[m] != 'string' ? data[m] : typeof data[m] === 'string' && data[m].match(regEx) ? getCalculatedDuty(data[m], data) :
-                    m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp, data);
+
+                return data.hasOwnProperty(m) && typeof data[m] == 'string' ?
+                    (data[m].match(/[\+-\/\*\%]/g) ? getCalculatedDuty(data[m], data) : data.hasOwnProperty(m) && data[m])
+                    : data.hasOwnProperty(m) && data[m] ? data[m] :
+                        m.toString().match(/^[0-9]+(\.[0-9]+)[0-9]*$/g) ? m : checkifFunction(m, temp, data);
+
             });
             // return eval(eval(("`" + duty + "`")));
             if (duty.includes('return')) {
@@ -139,7 +143,7 @@ const middleware = (router, middleware) => {
             return e;
         }
     },
-    getDutyfromUserInput = async (req, res, userInputData, basevalueref,isFTA) => {
+    getDutyfromUserInput = async (req, res, userInputData, basevalueref, isFTA) => {
         try {
             const selectQ = getDutySelectQueryFromJSON(userInputData, req.body);
             let duty = await db.sequelize.query(selectQ, SELECT_OPTIONS).catch(e => {
@@ -179,8 +183,8 @@ const middleware = (router, middleware) => {
                             d[key] = d[refKey];
                         }
                         else {
-                            let dataKey= checkifFunction(key,d[key],d);
-                            d[key]= dataKey && getCalculatedDuty(d[key],d, isFTA) || d[key];
+                            let dataKey = checkifFunction(key, d[key], d);
+                            d[key] = dataKey && getCalculatedDuty(d[key], d, isFTA) || d[key];
                         }
                     }
                     else if (key.endsWith('_cl')) {
@@ -193,7 +197,7 @@ const middleware = (router, middleware) => {
                             d[`${key}_formulae`] = d[key];
                             d['base_value'] = base_value;
                             Object.keys(req.body).forEach(bodyKey => d[bodyKey] = req.body[bodyKey] != null ? req.body[bodyKey] : 0);
-                            d[key] = getCalculatedDuty(d[key], d,isFTA);
+                            d[key] = getCalculatedDuty(d[key], d, isFTA);
                         }
                     }
                 });
