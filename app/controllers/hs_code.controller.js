@@ -48,7 +48,7 @@ exports.getProductFromCountryCode = async (req, res) => {
 	const { hs, imp } = req.query;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
-	const _q = `SELECT ${imp}_hs AS value, concat(${imp}_hs,' - ',${imp}_des) AS label FROM ${imp} WHERE ${imp}_hs like '${hs}%';`;
+	const _q = `SELECT ${imp}_hs AS value, ${imp}_des AS label FROM ${imp} WHERE ${imp}_hs like '${hs}%';`;
 	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, hs_codes);
 }
