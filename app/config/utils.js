@@ -89,13 +89,13 @@ const middleware = (router, middleware) => {
         if (refCols.length === 0) {
             return (`select ${colList.join()}
                  from ${reqBody.import_country}
-                 where ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.hscode};`);
+                 where ${reqBody.import_country}.${reqBody.import_country}_hs = "${reqBody.hscode}";`);
         }
         return (`select ${colList.join()}
                  from ${reqBody.import_country}
                           LEFT JOIN ${reqBody.import_country}_${refCols[0]}
                  ON ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.import_country}_${refCols[0]}.${reqBody.import_country}_hs
-                 where ${reqBody.import_country}.${reqBody.import_country}_hs = ${reqBody.hscode};`);
+                 where ${reqBody.import_country}.${reqBody.import_country}_hs = "${reqBody.hscode}";`);
     },
     getAllDutyColumns = (duty, duty_details_description, tblName, import_country) => {
         return [`${tblName}.${import_country}_${duty}_d as ${import_country}_${duty}_d`, `'${duty_details_description}' as ${import_country}_${duty}_dd`, `${tblName}.${import_country}_${duty}_f as ${import_country}_${duty}_f`, `${tblName}.${import_country}_${duty}_cl as ${import_country}_${duty}_cl`];
