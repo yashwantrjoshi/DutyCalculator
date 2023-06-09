@@ -44,7 +44,7 @@ exports.getRulesOfOrigin = async (req, res) => {
 		for await(const d of duty_info) {
 			let _q2 = `SELECT origin AS label, footnote AS value from roo WHERE hs6 = '${_hs}' AND rta_id = '${d.rta}' AND duty_code = '${d.duty}' AND fta_country LIKE '%${exp}%';`;
 			let data = await db.sequelize.query(_q2, SELECT_OPTIONS);
-			rules.push(data[0]);
+			data && data[0] && rules.push(data[0]);
 		}
 	}
 	returnData(res, rules);

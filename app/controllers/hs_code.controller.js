@@ -21,10 +21,10 @@ exports.getHsCodeDetails = async (req, res) => {
 	let _q = "";
 	if (_hs) {
 		if (hs.length % 2 !== 0) { return returnError(res, "Please enter 2, 4 or 6 digit hs code", 400); }
-		_q = `SELECT * FROM hs_codes_details WHERE hs2 = '${hs}' OR hs4 = '${hs}' OR hs6 = '${hs}' limit 100;`;
+		_q = `SELECT concat(hs2,' - ',hs2_des) AS hs2, concat(hs4,' - ',hs4_des) AS hs4, concat(hs6,' - ',hs6_des) AS hs6 FROM hs_codes_details WHERE hs2 = '${hs}' OR hs4 = '${hs}' OR hs6 = '${hs}' limit 100;`;
 	}
 	else {
-		_q = `SELECT * FROM hs_codes_details WHERE hs2_des LIKE '%${hs}%' OR hs4_des LIKE '%${hs}%' OR hs6_des LIKE '%${hs}%' limit 100;`;
+		_q = `SELECT concat(hs2,' - ',hs2_des) AS hs2, concat(hs4,' - ',hs4_des) AS hs4, concat(hs6,' - ',hs6_des) AS hs6 FROM hs_codes_details WHERE hs2_des LIKE '%${hs}%' OR hs4_des LIKE '%${hs}%' OR hs6_des LIKE '%${hs}%' limit 100;`;
 	}
 	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, hs_codes);
