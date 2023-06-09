@@ -7,4 +7,5 @@ module.exports = [
     {path: "/api/country/search", method: "get", handler: [ ctrl.getCountry]},
     {path: "/api/country/currency", method: "get", handler: [countryctrl.getCountryCurrency]},
     {path: "/api/hs_code/details", method: "get", handler: [ ctrl.getHsCodeDetails]},
+    {path: "/api/country/rules", method: "get", handler: [ countryctrl.getRulesOfOrigin]},
 ];

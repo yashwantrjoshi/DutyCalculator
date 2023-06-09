@@ -31,3 +31,21 @@ exports.getCountryCurrency = async (req, res) => {
 	let currency = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, currency);
 }
+
+exports.getRulesOfOrigin = async (req, res) => {
+	console.log("inside rules of origin");
+	const { hs, imp, exp } = req.query;
+	if (!hs || !imp || !exp) return returnError(res, "Please provide a search query", 400);
+	const _q1 = `SELECT duty_code AS duty, rta_id AS rta from master_fta WHERE imp_country_code='${imp}' AND exp_country_code LIKE '%${exp}%';`;
+	let duty_info = await db.sequelize.query(_q1, SELECT_OPTIONS);
+	let _hs = hs.toString().slice(0,6);
+	let rules = [];
+	if(duty_info && duty_info.length) {
+		for await(const d of duty_info) {
+			let _q2 = `SELECT origin AS label, footnote AS value from roo WHERE hs6 = '${_hs}' AND rta_id = '${d.rta}' AND duty_code = '${d.duty}' AND fta_country LIKE '%${exp}%';`;
+			let data = await db.sequelize.query(_q2, SELECT_OPTIONS);
+			rules.push(data[0]);
+		}
+	}
+	returnData(res, rules);
+}
