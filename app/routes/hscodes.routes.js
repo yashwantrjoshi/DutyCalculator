@@ -9,4 +9,5 @@ module.exports = [
 	{path: "/api/currency/all", method: "get", handler: [ctrl.getCurrency]},
 	{path: "/api/getProductFromCountryCode", method: "get", handler: [ctrl.getProductFromCountryCode]},
 	{path: "/api/getUserInput", method: "get", handler: [ctrl.getUserInput]},
+	{path: "/api/hsCountrySearch", method: "get", handler: [ctrl.hsCountrySearch]},
 ];

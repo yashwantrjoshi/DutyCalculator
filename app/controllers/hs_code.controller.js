@@ -24,7 +24,7 @@ exports.getHsCodeDetails = async (req, res) => {
 		_q = `SELECT concat(product,' - ',hs_code) AS hs6 FROM hs_codes WHERE product LIKE '${hs}%' limit 100;`;
 	}
 	else {
-		_q = `SELECT concat(product,' - ',hs_code) AS hs6 FROM hs_codes WHERE hs_code LIKE '%${hs}%' limit 100;`;
+		_q = `SELECT concat(product,' - ',hs_code) AS hs6 FROM hs_codes WHERE hs_code LIKE '% ${hs} %' limit 100;`;
 	}
 	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, hs_codes);
@@ -63,4 +63,21 @@ exports.getCurrency = async (req, res) => {
 	const _q = `SELECT country_id AS code, cyn_code AS value, cyn_name AS label FROM master_cyn;`;
 	let currency = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, currency);
+}
+
+exports.hsCountrySearch = async(req, res) => {
+	const { hs, imp } = req.query;
+	if (!hs) return returnError(res, "Please provide a search query", 400);
+	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
+	const _hs = parseInt(hs);
+	let _q = "";
+	if (_hs) {
+		if (hs.length % 2 !== 0) { return returnError(res, "Please enter 2, 4 or 6 digit hs code", 400); }
+		_q = `SELECT concat(${imp}_hs6,' - ', ${imp}_des) AS hs6, ${imp}_hs6 AS hsn FROM ${imp} WHERE ${imp}_hs6 LIKE '${hs}%' LIMIT 100;`;
+	}
+	else {
+		_q = `SELECT concat(${imp}_hs6,' - ', ${imp}_des) AS hs6, ${imp}_hs6 AS hsn FROM ${imp} WHERE ${imp}_des LIKE '% ${hs} %' LIMIT 100;`;
+	}
+	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
+	returnData(res, hs_codes);
 }
