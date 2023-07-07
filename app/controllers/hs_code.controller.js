@@ -46,10 +46,16 @@ exports.getUserInput = async (req, res) => {
 
 exports.getProductFromCountryCode = async (req, res) => {
 	const { hs, imp } = req.query;
+	let hs_codes;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
 	const _q = `SELECT ${imp}_hs AS value, ${imp}_des AS label FROM ${imp} WHERE ${imp}_hs like '${hs}%';`;
-	let hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
+	try {
+		hs_codes = await db.sequelize.query(_q, SELECT_OPTIONS);
+	} catch(err) {
+		console.log("Error in hsn country code api ", err);
+		return res.status(204).send();
+	}
 	returnData(res, hs_codes);
 }
 
