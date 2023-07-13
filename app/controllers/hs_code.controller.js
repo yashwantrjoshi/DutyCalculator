@@ -5,6 +5,7 @@ const { SELECT_OPTIONS } = require("../config/CONSTANT");
 const { returnData, returnError } = require("../config/db.common");
 
 exports.getHsCode = async (req, res) => {
+	console.log("Inside getHSCode API");
 	const { q } = req.query;
 	if (!q) return returnError(res, "Please provide a search query", 400);
 	if (q && q.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
@@ -14,6 +15,7 @@ exports.getHsCode = async (req, res) => {
 }
 
 exports.getHsCodeDetails = async (req, res) => {
+	console.log("Inside getHSCodeDetails API");
 	const { hs } = req.query;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
@@ -31,6 +33,7 @@ exports.getHsCodeDetails = async (req, res) => {
 }
 
 exports.getUserInput = async (req, res) => {
+	console.log("Inside getUserInput API");
 	const { hs, imp } = req.query;
 	let data = [];
 	if (!hs) return returnError(res, "Please provide a search query", 400);
@@ -45,6 +48,7 @@ exports.getUserInput = async (req, res) => {
 }
 
 exports.getProductFromCountryCode = async (req, res) => {
+	console.log("Inside getProductCountryCode API");
 	const { hs, imp } = req.query;
 	let hs_codes, _q;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
@@ -66,18 +70,21 @@ exports.getProductFromCountryCode = async (req, res) => {
 }
 
 exports.getCountry = async (req, res) => {
+	console.log("Inside getCountry API");
 	const _q = `SELECT country_code as value, country_name as label FROM master_cyn;`;
 	let country = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, country);
 }
 
 exports.getCurrency = async (req, res) => {
+	console.log("Inside getCurrency API");
 	const _q = `SELECT country_id AS code, cyn_code AS value, cyn_name AS label FROM master_cyn;`;
 	let currency = await db.sequelize.query(_q, SELECT_OPTIONS);
 	returnData(res, currency);
 }
 
 exports.hsCountrySearch = async (req, res) => {
+	console.log("Inside hsCountrySearch API");
 	const { hs, imp } = req.query;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);

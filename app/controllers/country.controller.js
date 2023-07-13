@@ -5,6 +5,7 @@ const {SELECT_OPTIONS} = require("../config/CONSTANT");
 const {returnData, returnError} = require("../config/db.common");
 
 exports.getCountry = async (req, res) => {
+	console.log("Inside getCountry API");
 	const {q} = req.query;
 	if (!q) return returnError(res, "Please provide a search query", 400);
 	if (q && q.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
@@ -14,6 +15,7 @@ exports.getCountry = async (req, res) => {
 }
 
 exports.getHsCodeDetails = async (req, res) => {
+	console.log("Inside getHSCodeDetails API");
 	const {hs} = req.query;
 	if (!hs) return returnError(res, "Please provide a search query", 400);
 	if (hs && hs.length < 2) return returnError(res, "Please enter at least min 2 character", 400);
@@ -26,6 +28,7 @@ exports.getHsCodeDetails = async (req, res) => {
 }
 
 exports.getCountryCurrency = async (req, res) => {
+	console.log("Inside getCountryCurrency API");
 	const { imp } = req.query;
 	const _q = `SELECT exp_cyn AS country, exp_cyn_code AS currency, exp_country_unit AS unit, imp_exchange_rate AS value FROM cyn where imp_cyn_id='${imp}';`;
 	let currency = await db.sequelize.query(_q, SELECT_OPTIONS);
@@ -33,7 +36,7 @@ exports.getCountryCurrency = async (req, res) => {
 }
 
 exports.getRulesOfOrigin = async (req, res) => {
-	console.log("inside rules of origin");
+	console.log("Inside get rules of origin API");
 	const { hs, imp, exp } = req.query;
 	if (!hs || !imp || !exp) return returnError(res, "Please provide a search query", 400);
 	const _q1 = `SELECT duty_code AS duty, rta_id AS rta from master_fta WHERE imp_country_code='${imp}' AND exp_country_code LIKE '%${exp}%';`;

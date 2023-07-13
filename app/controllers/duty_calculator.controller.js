@@ -6,6 +6,7 @@ const { returnData, returnError } = require("../config/db.common");
 
 /*Controller Start */
 exports.getUserInput = async (req, res) => {
+    console.log("Inside getUserInput API");
     if (!req.body.hscode || !req.body.export_country)
         returnError(res, 'Invalid Input');
     let userInput = await db.sequelize.query(`SELECT duty_code
@@ -21,6 +22,7 @@ exports.getUserInput = async (req, res) => {
 }
 
 exports.getDuty = async (req, res) => {
+    console.log("Inside getDuty API");
     if (!req.body.hscode || !req.body.import_country || !req.body.export_country)
         returnError(res, 'Invalid Input');
     let userInput = await db.sequelize.query(`SELECT duty_code, duty_details_description, remarks, ref, mode
@@ -116,6 +118,7 @@ exports.getDuty = async (req, res) => {
     returnError(res, 'No data, please check the input');
 }
 exports.getFTA = async (req, res) => {
+    console.log("Inside getFTA API");
     if (!req.body.hscode || !req.body.import_country || !req.body.export_country)
         returnError(res, 'Invalid Input');
     let userInput = await db.sequelize.query(`SELECT duty_code, duty_details_description, remarks, ref, mode
@@ -146,4 +149,8 @@ exports.getFTA = async (req, res) => {
     }
     returnData(res, returnDataa);
     returnError(res, 'No data, please check the input');
+}
+
+exports.check = async (req, res) => {
+    returnData(res, 'Server is up');
 }
